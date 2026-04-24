@@ -3,48 +3,50 @@ package ir
 import (
 	"go/ast"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 type DivNode struct {
 	expr ast.Expr
-	baseNode
+	binaryNode
 }
 
 func NewDivNode(expr ast.Expr, lhs, rhs Node) *DivNode {
 	return initBinaryNode(&DivNode{expr: expr}, lhs, rhs)
 }
 
-func (a *DivNode) GraphicLabel() string {
+func (d *DivNode) GraphicLabel() string {
 	return "/"
 }
 
-func (a *DivNode) label() string {
+func (d *DivNode) label() string {
 	return "Div"
 }
 
-func (a *DivNode) compute() (types.Type, error) {
-	lType, ok := a.Lhs().base().typ.(*types.IntType)
+func (d *DivNode) compute() (types.Type, error) {
+	lType, ok := d.Lhs().base().typ.(*types.IntType)
 	if !ok {
-		return types.Bottomtype, nil
+		return types.BottomType, nil
 	}
-	rType, ok := a.Rhs().base().typ.(*types.IntType)
+	rType, ok := d.Rhs().base().typ.(*types.IntType)
 	if !ok {
-		return types.Bottomtype, nil
+		return types.BottomType, nil
 	}
 
 	if lType.Constant() && rType.Constant() {
 		if rType.Value == 0 {
 			return nil, computeError(d.expr, "divide by zero")
 		}
-		return types.NewIntType(lType.value / rType.Value), nil
+		return types.NewIntType(lType.Value / rType.Value), nil
 	}
 	return types.BottomType, nil
 }
 
-func (a *DivNode) toStringInternal(sb *strings.Builder) {
+func (d *DivNode) toStringInternal(sb *strings.Builder) {
 	sb.WriteString("(")
-	toString(a.Lhs(), sb)
+	toString(d.Lhs(), sb)
 	sb.WriteString("/")
-	toString(a.Rhs(), sb)
+	toString(d.Rhs(), sb)
 	sb.WriteString(")")
 }

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"seaofnodes/ir/types"
 	"strconv"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 type ASTError struct {
@@ -73,7 +74,7 @@ func (g *Generator) generateExpr(e ast.Expr) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		switch t.OP {
+		switch t.Op {
 		case token.ADD:
 			return peephole(NewAddNode(lhs, rhs))
 		case token.SUB:
@@ -89,7 +90,7 @@ func (g *Generator) generateExpr(e ast.Expr) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		if t.OP == token.SUB {
+		if t.Op == token.SUB {
 			return peephole(NewMinusNode(value))
 		}
 

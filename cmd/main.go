@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
-	simple "seaofnodes"
-	"seaofnodes/graph"
-	"seaofnodes/ir"
+
+	simple "github.com/JackDalberg/SeaOfNodes"
+	"github.com/JackDalberg/SeaOfNodes/graph"
+	"github.com/JackDalberg/SeaOfNodes/ir"
 )
 
 func main() {
-	useGoAst := flag.Bool("a", false, "")
+	useGoAST := flag.Bool("a", false, "")
 	printString := flag.Bool("s", false, "")
 	disablePeephole := flag.Bool("d", false, "")
 	flag.Usage = func() {
@@ -48,8 +49,8 @@ func main() {
 	}
 
 	if *printString {
-		fmt.Printf("String:\n\n%s", ir.ToString(node))
+		fmt.Printf("String:\n\n%s\n", ir.ToString(node))
 	} else {
-		fmt.Printf("Graph:\n\n%s", graph.Visualize())
+		fmt.Printf("Graph:\n\n%s\n", graph.Visualize())
 	}
 }

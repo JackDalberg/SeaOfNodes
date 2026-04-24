@@ -1,9 +1,10 @@
 package graph
 
 import (
-	"seaofnodes/ir"
 	"strconv"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir"
 )
 
 func Visualize() string {

@@ -1,6 +1,10 @@
 package ir
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
+)
 
 type AddNode struct {
 	binaryNode
@@ -21,15 +25,15 @@ func (a *AddNode) label() string {
 func (a *AddNode) compute() (types.Type, error) {
 	lType, ok := a.Lhs().base().typ.(*types.IntType)
 	if !ok {
-		return types.Bottomtype, nil
+		return types.BottomType, nil
 	}
 	rType, ok := a.Rhs().base().typ.(*types.IntType)
 	if !ok {
-		return types.Bottomtype, nil
+		return types.BottomType, nil
 	}
 
 	if lType.Constant() && rType.Constant() {
-		return types.NewIntType(lType.value + rType.Value), nil
+		return types.NewIntType(lType.Value + rType.Value), nil
 	}
 	return types.BottomType, nil
 }

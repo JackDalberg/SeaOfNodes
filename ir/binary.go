@@ -17,7 +17,7 @@ func initBinaryNode[T BinaryNode](n T, lhs, rhs Node) T {
 	return initBaseNode(n, lhs, rhs)
 }
 
-func (b *binaryNode) binary() *binarNode {
+func (b *binaryNode) binary() *binaryNode {
 	return b
 }
 

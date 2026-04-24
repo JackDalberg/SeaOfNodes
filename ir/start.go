@@ -1,8 +1,9 @@
 package ir
 
 import (
-	"seaofnodes/ir/types"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 // Only need 1 start node

@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/types"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 var (
@@ -111,7 +112,7 @@ func setIn(n Node, i int, in Node) error {
 	}
 
 	if old != nil {
-		removeOld(old, n)
+		removeOut(old, n)
 		if Unused(old) {
 			err := kill(old)
 			if err != nil {

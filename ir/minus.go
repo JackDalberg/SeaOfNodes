@@ -1,13 +1,17 @@
 package ir
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
+)
 
 type MinusNode struct {
 	baseNode
 }
 
 func NewMinusNode(value Node) *MinusNode {
-	return initBinaryNode(&MinusNode{}, value)
+	return initBaseNode(&MinusNode{}, value)
 }
 
 func (m *MinusNode) IsControl() bool {
@@ -34,11 +38,11 @@ func (m *MinusNode) compute() (types.Type, error) {
 		}
 		return typ, nil
 	}
-	return types.Bottomtype, nil
+	return types.BottomType, nil
 }
 
 func (m *MinusNode) toStringInternal(sb *strings.Builder) {
 	sb.WriteString("(-")
-	toString(m.Rhs(), sb)
+	toString(m.Value(), sb)
 	sb.WriteString(")")
 }

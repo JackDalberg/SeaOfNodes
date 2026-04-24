@@ -1,9 +1,10 @@
 package ir
 
 import (
-	"go/types"
 	"strconv"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 type ConstantNode struct {
@@ -38,5 +39,5 @@ func (c *ConstantNode) toStringInternal(sb *strings.Builder) {
 }
 
 func (c *ConstantNode) value() int {
-	return c.typ.(*types.IntValue).Value
+	return c.typ.(*types.IntType).Value
 }

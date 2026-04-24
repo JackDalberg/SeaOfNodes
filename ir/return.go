@@ -1,8 +1,9 @@
 package ir
 
 import (
-	"seaofnodes/ir/types"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
 type ReturnNode struct {
@@ -25,7 +26,7 @@ func (r *ReturnNode) Expr() Node {
 	return In(r, 1)
 }
 
-func (r *ReturnNode) label() srting {
+func (r *ReturnNode) label() string {
 	return "Return"
 }
 

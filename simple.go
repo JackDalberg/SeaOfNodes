@@ -3,9 +3,10 @@ package simple
 import (
 	"errors"
 	goParser "go/parser"
-	"seaofnodes/ir"
-	"seaofnodes/parser"
 	"strings"
+
+	"github.com/JackDalberg/SeaOfNodes/ir"
+	"github.com/JackDalberg/SeaOfNodes/parser"
 )
 
 type SourceError struct {
