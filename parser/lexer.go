@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"strings"
 	"unicode"
 )
 
@@ -121,6 +122,17 @@ func (l *lexer) ReadToken() (string, int, error) {
 		l.position++
 		return string(b), l.position - 1, nil
 	}
+}
+
+func (l *lexer) ReadOp() (byte, int, bool) {
+	l.skipWhitespace()
+	b, ok := l.peek()
+	if !ok || !strings.ContainsRune("+-*/", rune(b)) {
+		return 0, 0, false
+	}
+
+	l.position++
+	return b, l.position - 1, true
 }
 
 func (l *lexer) ReadByte() (byte, int, bool) {

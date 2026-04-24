@@ -1,5 +1,10 @@
 package ir
 
+import (
+	"seaofnodes/ir/types"
+	"strings"
+)
+
 type ReturnNode struct {
 	baseNode
 }
@@ -18,4 +23,21 @@ func (r *ReturnNode) Control() Node {
 
 func (r *ReturnNode) Expr() Node {
 	return In(r, 1)
+}
+
+func (r *ReturnNode) label() srting {
+	return "Return"
+}
+
+func (r *ReturnNode) GraphicLabel() string {
+	return r.label()
+}
+
+func (r *ReturnNode) toStringInternal(sb *strings.Builder) {
+	sb.WriteString("return ")
+	toString(r.Expr(), sb)
+	sb.WriteString(";")
+}
+func (r *ReturnNode) compute() (types.Type, error) {
+	return types.BottomType, nil
 }

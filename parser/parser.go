@@ -86,7 +86,7 @@ func (p *Parser) parseReturn(pos token.Pos) (*ast.ReturnStmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
-	return p.parsePrimary()
+	return p.parseBinary()
 }
 
 func (p *Parser) parsePrimary() (*ast.BasicLit, error) {
@@ -129,4 +129,92 @@ func (p *Parser) string(n ast.Node) string {
 	sb := &strings.Builder{}
 	printer.Fprint(sb, p.fileset, n)
 	return sb.String()
+}
+
+func (p *Parser) parseUnary() (ast.Expr, error) {
+	op, opPos, hasOp := p.parseOp()
+	if !hasOp {
+		return p.parsePrimary()
+	}
+
+	value, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.UnaryExpr{X: value, Op: op, OpPos: opPos}, nil
+}
+
+func (p *Parser) parseBinary() (ast.Expr, error) {
+	lhs, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+
+	return p.parseRhs(lhs)
+}
+
+func (p *Parser) parseRhs(lhs ast.Expr) (ast.Expr, error) {
+	op, opPos, hasOp := p.parseOp()
+	if !hasOp {
+		return lhs, nil
+	}
+
+	rhs, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+
+	return p.parseRhs(p.withPrecedence(lhs, op, opPos, rhs))
+}
+
+func (p *Parser) parseOp() (token.Token, token.Pos, bool) {
+	op, opOffset, ok := p.lexer.ReadOp()
+	if !ok {
+		return 0, 0, false
+	}
+	return opToToken(op), p.offsetToPos(opOffset), true
+}
+
+func (p *Parser) withPrecedence(lhs ast.Expr, op token.Token, opPos token.Pos, rhs ast.Expr) *ast.BinaryExpr {
+	binLhs, ok := lhs.(*ast.BinaryExpr)
+	if !ok {
+		return &ast.BinaryExpr{
+			X:     lhs,
+			Y:     rhs,
+			Op:    op,
+			OpPos: opPos,
+		}
+	}
+
+	lExpr, mExpr, rExpr := binLhs.X, binLhs.Y, rhs
+	lOp, rOp := binLhs.Op, op
+	lOpPos, rOpPos := binLhs.OpPos, opPos
+
+	if lOp.Precedence() >= rOp.Precedence() {
+		lhs := &ast.BinaryExpr{
+			X:     lExpr,
+			Y:     mExpr,
+			Op:    lOp,
+			OpPos: lOpPos,
+		}
+		return &ast.BinaryExpr{
+			X:     lhs,
+			Y:     rExpr,
+			Op:    rOp,
+			OpPos: rOpPos,
+		}
+	}
+	rhs = &ast.BinaryExpr{
+		X:     mExpr,
+		Y:     rExpr,
+		Op:    rOp,
+		OpPos: rOpPos,
+	}
+	return &ast.BinaryExpr{
+		X:     lExpr,
+		Y:     rhs,
+		Op:    lOp,
+		OpPos: lOpPos,
+	}
+
 }
