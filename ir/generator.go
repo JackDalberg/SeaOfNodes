@@ -9,6 +9,16 @@ import (
 	"github.com/JackDalberg/SeaOfNodes/ir/types"
 )
 
+type instruction struct {
+	ast.Stmt
+	id string
+}
+
+var (
+	ShowGraphInst       = &instruction{id: "showGraph"}
+	DisablePeepholeInst = &instruction{id: "disablePeephole"}
+)
+
 type ASTError struct {
 	err error
 	Pos token.Pos
@@ -26,7 +36,9 @@ func astError(pos token.Pos, n ast.Node) *ASTError {
 	}
 }
 
-type Generator struct{}
+type Generator struct {
+	Scope ScopeNode
+}
 
 func NewGenerator() *Generator {
 	return &Generator{}
@@ -40,15 +52,99 @@ func (g *Generator) Generate(n ast.Node) (*ReturnNode, error) {
 			return false
 		}
 
-		if ret, ok := n.(*ast.ReturnStmt); ok {
-			retNode, err = g.generateReturn(ret)
-			if err != nil {
-				return false
-			}
+		if block, ok := n.(*ast.BlockStmt); ok {
+			var res Node
+			res, err = g.generateBlock(block)
+			retNode, _ = res.(*ReturnNode)
+			return false
 		}
 		return true
 	})
 	return retNode, err
+}
+
+func (g *Generator) generateBlock(block *ast.BlockStmt) (Node, error) {
+	g.Scope.Push()
+	defer g.Scope.Pop()
+
+	var res Node
+	for _, stmt := range block.List {
+		n, err := g.generateStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		if n != nil {
+			res = n
+		}
+	}
+	return res, nil
+}
+
+func (g *Generator) generateStatement(s ast.Stmt) (Node, error) {
+	switch t := s.(type) {
+	case *ast.ReturnStmt:
+		return g.generateReturn(t)
+
+	case *ast.DeclStmt:
+		spec, ok := t.Decl.(*ast.GenDecl).Specs[0].(*ast.ValueSpec)
+		if !ok {
+			return nil, astError(s.Pos(), s)
+		}
+		return g.generateDecl(spec)
+
+	case *ast.BlockStmt:
+		return g.generateBlock(t)
+
+	case *ast.AssignStmt:
+		return g.generateAssign(t)
+
+	case *instruction:
+		switch s {
+		case ShowGraphInst:
+			fmt.Println(Visualize(g))
+		case DisablePeepholeInst:
+			DisablePeephole = true
+		}
+		return nil, nil
+
+	default:
+		return nil, astError(s.Pos(), s)
+	}
+}
+
+func (g *Generator) generateAssign(a *ast.AssignStmt) (Node, error) {
+	id, ok := a.Lhs[0].(*ast.Ident)
+	if !ok {
+		return nil, astError(a.Pos(), a)
+	}
+
+	expr, err := g.generateExpr(a.Rhs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	exists, err := g.Scope.Update(id.Name, expr)
+	if !exists {
+		return nil, computeError(id, "unknown identifier")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return expr, nil
+}
+
+func (g *Generator) generateDecl(v *ast.ValueSpec) (Node, error) {
+	name := v.Names[0].Name
+	value, err := g.generateExpr(v.Values[0])
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.Scope.Define(name, value)
+	if err != nil {
+		return nil, err
+	}
+	return value, nil
 }
 
 func (g *Generator) generateReturn(r *ast.ReturnStmt) (*ReturnNode, error) {
@@ -94,12 +190,22 @@ func (g *Generator) generateExpr(e ast.Expr) (Node, error) {
 			return peephole(NewMinusNode(value))
 		}
 
+	case *ast.ParenExpr:
+		return g.generateExpr(t.X)
+
 	case *ast.BasicLit:
 		num, err := strconv.Atoi(t.Value)
 		if err != nil {
 			return nil, err
 		}
 		return peephole(NewConstantNode(types.NewIntType(num)))
+
+	case *ast.Ident:
+		n, ok := g.Scope.Lookup(t.Name)
+		if !ok {
+			return nil, computeError(e, "unknown identifier")
+		}
+		return n, nil
 	}
 	return nil, astError(e.Pos(), e)
 }

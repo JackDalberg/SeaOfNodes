@@ -1,13 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
 	simple "github.com/JackDalberg/SeaOfNodes"
-	"github.com/JackDalberg/SeaOfNodes/graph"
 	"github.com/JackDalberg/SeaOfNodes/ir"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	disablePeephole := flag.Bool("d", false, "")
 	flag.Usage = func() {
 		fmt.Println("Simple compiler written in Go. Prints graph representation of IR.")
-		fmt.Printf("Usage: %s [-a] [-d] [-s] <code>\n", os.Args[0])
+		fmt.Printf("Usage: %s [-a] [-d] [-s] <file>\n", os.Args[0])
 		fmt.Println("\t-a\tUse Go AST parser")
 		fmt.Println("\t-d\tDisable peephole optimizations")
 		fmt.Println("\t-s\tPrint string visualization")
@@ -26,22 +27,37 @@ func main() {
 
 	flag.Parse()
 	if len(flag.Args()) != 1 {
-		fmt.Println("Missing code argument")
+		fmt.Println("Missing file argument")
 		flag.Usage()
 		return
 	}
-	code := flag.Args()[0]
 
 	if *disablePeephole {
 		ir.DisablePeephole = true
 	}
 
+	file := flag.Args()[0]
+	fp, err := os.Open(file)
+	if err != nil {
+		fmt.Printf("error opening file %q", file)
+		return
+	}
+	fileBytes, err := io.ReadAll(fp)
+	if err != nil {
+		fmt.Println("error reading in file contents")
+		return
+	}
+
+	// Since reading from file, '\n' behaves weirdly with current parser... will fix
+	filtered := bytes.ReplaceAll(fileBytes, []byte("\n"), []byte(""))
+	code := string(filtered)
+
 	var node ir.Node
-	var err error
+	var generator *ir.Generator
 	if *useGoAST {
-		node, err = simple.GoSimple(code)
+		node, generator, err = simple.GoSimple(code)
 	} else {
-		node, err = simple.Simple(code)
+		node, generator, err = simple.Simple(code)
 	}
 
 	if err != nil {
@@ -51,6 +67,6 @@ func main() {
 	if *printString {
 		fmt.Printf("String:\n\n%s\n", ir.ToString(node))
 	} else {
-		fmt.Printf("Graph:\n\n%s\n", graph.Visualize())
+		fmt.Printf("Graph:\n\n%s\n", ir.Visualize(generator))
 	}
 }

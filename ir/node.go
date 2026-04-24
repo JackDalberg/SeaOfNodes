@@ -95,6 +95,13 @@ func Outs(n Node) []Node {
 	return n.base().outs
 }
 
+func addIn(n, in Node) {
+	n.base().ins = append(n.base().ins, in)
+	if in != nil {
+		addOut(in, n)
+	}
+}
+
 func addOut(n, out Node) {
 	n.base().outs = append(n.base().outs, out)
 }
@@ -122,6 +129,19 @@ func setIn(n Node, i int, in Node) error {
 	}
 
 	n.base().ins[i] = in
+	if in != nil {
+		addOut(in, n)
+	}
+	return nil
+}
+
+func removeLastIn(n Node) error {
+	lastIn := len(n.base().ins) - 1
+	err := setIn(n, lastIn, nil)
+	if err != nil {
+		return err
+	}
+	n.base().ins = n.base().ins[:lastIn]
 	return nil
 }
 

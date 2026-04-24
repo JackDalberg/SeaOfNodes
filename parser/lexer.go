@@ -6,6 +6,11 @@ import (
 	"unicode"
 )
 
+var (
+	ErrNAN = errors.New("not a number")
+	ErrEOF = errors.New("EOF")
+)
+
 type lexer struct {
 	input    []byte
 	position int
@@ -89,7 +94,7 @@ func (l *lexer) scanNumberString() (string, int, error) {
 	}
 
 	if len(s) == 0 {
-		return "", pos, errors.New("not a number")
+		return "", pos, ErrNAN
 	}
 	return s, pos, nil
 }
@@ -99,28 +104,25 @@ func (l *lexer) ReadNumber() (string, int, error) {
 	return l.scanNumberString()
 }
 
-func (l *lexer) ReadToken() (string, int, error) {
+func (l *lexer) ReadToken() (string, int, bool, error) {
 	l.skipWhitespace()
 	b, ok := l.peek()
 
 	switch {
 	case !ok:
-		return "", 0, nil
+		return "", l.position, false, ErrEOF
 
 	case isValidIDStart(b):
 		id, pos := l.scanID()
-		return id, pos, nil
+		return id, pos, true, nil
 
 	case unicode.IsNumber(rune(b)):
-		return l.scanNumberString()
-
-	case unicode.IsPunct(rune(b)):
-		p, pos := l.scanPunctuation()
-		return p, pos, nil
+		num, pos, err := l.scanNumberString()
+		return num, pos, false, err
 
 	default:
 		l.position++
-		return string(b), l.position - 1, nil
+		return string(b), l.position - 1, false, nil
 	}
 }
 
@@ -142,4 +144,24 @@ func (l *lexer) ReadByte() (byte, int, bool) {
 		return 0, 0, false
 	}
 	return b, l.position - 1, true
+}
+
+func (l *lexer) ReadID() (string, int, bool) {
+	l.skipWhitespace()
+	b, ok := l.peek()
+	if !ok || !isValidIDStart(b) {
+		return "", l.position, false
+	}
+	id, pos := l.scanID()
+	return id, pos, true
+}
+
+func (l *lexer) Read(next byte) (int, bool) {
+	l.skipWhitespace()
+	b, ok := l.peek()
+	if !ok || b != next {
+		return l.position, false
+	}
+	l.position++
+	return l.position - 1, true
 }

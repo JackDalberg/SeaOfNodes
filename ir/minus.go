@@ -32,7 +32,7 @@ func (m *MinusNode) Value() Node {
 
 func (m *MinusNode) compute() (types.Type, error) {
 	typ, ok := m.Value().base().typ.(*types.IntType)
-	if !ok {
+	if ok {
 		if typ.Constant() {
 			return types.NewIntType(-typ.Value), nil
 		}
